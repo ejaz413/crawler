@@ -10,6 +10,8 @@ find_package(ament_cmake REQUIRED)
 find_package(ament_cmake_python REQUIRED)
 find_package(rclpy REQUIRED)
 find_package(geometry_msgs REQUIRED)
+find_package(sensor_msgs REQUIRED)
+find_package(std_msgs REQUIRED)
 
 ament_python_install_package(${PROJECT_NAME})
 
@@ -17,7 +19,12 @@ ament_python_install_package(${PROJECT_NAME})
 install(
   PROGRAMS
   ${PROJECT_NAME}/epos_driver.py
+  #${PROJECT_NAME}/obstacle_gate.py 
+  ${PROJECT_NAME}/simple_stop_front.py
   ${PROJECT_NAME}/teleop_cli.py
+  ${PROJECT_NAME}/teleop_cli2.py
+  ${PROJECT_NAME}/teleop_gui.py
+  #${PROJECT_NAME}/scan_angle.py
 
   DESTINATION lib/${PROJECT_NAME}
 )

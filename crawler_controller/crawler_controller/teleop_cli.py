@@ -8,8 +8,8 @@ from geometry_msgs.msg import Twist
 
 Help ="""
 W/A/S/D to move, SPACE to stop, ',' slower, '.' faster, 'q' quit
-   W = forward
-   S = backward
+   W = Backward
+   S = Forward
    A = left turn (in place)
    D = right turn (in place)
 
