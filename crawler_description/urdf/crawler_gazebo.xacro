@@ -1,0 +1,55 @@
+<?xml version="1.0"?>
+
+<robot name= "crawler" xmlns:xacro="http://www.ros.org/wiki/xacro">
+    <gazebo reference="front_rw">
+        <mu1>0.1</mu1>
+        <mu2>0.1</mu2>
+
+        <kp>1000000.0</kp>
+        <kd>100.0</kd>
+        <minDepth>0.001</minDepth>
+        <maxvel>0.1</maxvel>
+        
+
+    </gazebo>
+
+    <gazebo reference="front_lw">
+        <mu1>0.1</mu1>
+        <mu2>0.1</mu2>
+
+        <kp>1000000.0</kp>
+        <kd>100.0</kd>
+        <minDepth>0.001</minDepth>
+        <maxvel>0.1</maxvel>
+        
+
+    </gazebo>
+
+    <gazebo reference="rear_rw">
+        <mu1>100000000000000.0</mu1>
+        <mu2>100000000000000.0</mu2>
+
+        <kp>1000000000000.0</kp>
+        <kd>10.0</kd>
+        <minDepth>0.001</minDepth>
+        <maxvel>0.1</maxvel>
+        <fdir1>1 0 0</fdir1>
+
+    </gazebo>
+
+
+    <gazebo reference="rear_lw">
+        <mu1>100000000000000.0</mu1>
+        <mu2>100000000000000.0</mu2>
+
+        <kp>1000000000000.0</kp>
+        <kd>10.0</kd>
+        <minDepth>0.001</minDepth>
+        <maxvel>0.1</maxvel>
+        <fdir1>1 0 0</fdir1>
+
+    </gazebo>
+
+
+
+</robot>

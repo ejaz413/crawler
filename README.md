@@ -7,7 +7,7 @@ sudo apt-get install ros-humble-ros2-control
 
 2.  Install ROS2 controllers package
  ```bash
- sudo apt-get install ros-humble-ros2-control
+ sudo apt-get install ros-humble-ros2-controllers
  ```
 
 3. Install Xacro Package
