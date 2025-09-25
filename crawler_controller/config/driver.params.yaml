@@ -1,0 +1,11 @@
+epos_driver:
+  ros__parameters:
+    ports: ["USB0", "USB1"]  # Left and Right Motors
+    node_ids: [1, 1]
+    invert: [true, false]
+    max_rpm: 6000            # Maximum forward speed
+    turn_again: 0.6          # How strong angular.z affects diff
+    acc_rpm_s: 1000
+    dec_rpm_s: 1000
+    library_path: "/home/pavetech/EPOS_Linux_Library/lib/arm/v8/libEposCmd.so.6.8.1.0"
+    sample_period: 0.2
