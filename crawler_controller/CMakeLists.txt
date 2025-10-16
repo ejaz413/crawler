@@ -19,11 +19,11 @@ ament_python_install_package(${PROJECT_NAME})
 
 install(
   PROGRAMS
-  ${PROJECT_NAME}/epos_driver2.py
+  ${PROJECT_NAME}/epos_driver3.py
   ${PROJECT_NAME}/odom.py
   #${PROJECT_NAME}/obstacle_gate.py 
   ${PROJECT_NAME}/simple_stop_front.py
-  ${PROJECT_NAME}/teleop_gui.py
+  ${PROJECT_NAME}/teleop_gui3.py
   #${PROJECT_NAME}/scan_angle.py
 
   DESTINATION lib/${PROJECT_NAME}

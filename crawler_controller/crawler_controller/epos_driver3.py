@@ -66,6 +66,10 @@ class EPOSDriver(Node):
         self.declare_parameter('avg_subidx', 0x00)
         self.declare_parameter('avg_value_u32', 0)
 
+        # --- NEW: topics for publishing speeds ---
+        self.declare_parameter('vel_topic', '/vel')
+        self.declare_parameter('wheel_speeds_topic', '/wheel_speeds')
+
         # Read params
         ports        = self.get_parameter('ports').get_parameter_value().string_array_value
         node_ids     = self.get_parameter('node_ids').get_parameter_value().integer_array_value
@@ -99,6 +103,9 @@ class EPOSDriver(Node):
         self.avg_idx        = int(self.get_parameter('avg_idx').value)
         self.avg_subidx     = int(self.get_parameter('avg_subidx').value)
         self.avg_value_u32  = int(self.get_parameter('avg_value_u32').value)
+
+        self.vel_topic = self.get_parameter('vel_topic').get_parameter_value().string_value
+        self.wheel_speeds_topic = self.get_parameter('wheel_speeds_topic').get_parameter_value().string_value
 
         # Load EPOS library
         try:
@@ -138,6 +145,8 @@ class EPOSDriver(Node):
         self.sub_cmd = self.create_subscription(Twist, '/cmd_vel', self.on_cmd_vel, 10)
         self.sub_qs  = self.create_subscription(Bool, '/quick_stop', self.on_quick_stop, 10)
         self.odom_pub = self.create_publisher(Odometry, '/odom', qos)
+        self.vel_pub  = self.create_publisher(Twist, self.vel_topic, qos)                 # NEW
+        self.wh_pub   = self.create_publisher(Twist, self.wheel_speeds_topic, qos)        # NEW
         self.tf_broadcaster = tf2_ros.TransformBroadcaster(self)
         self.srv_reset = self.create_service(Empty, '/reset_odom', self._on_reset_odom)
 
@@ -272,7 +281,7 @@ class EPOSDriver(Node):
         right_dev = -right_rpm_robot if self.motors[1]["invert"] else right_rpm_robot
 
         self._move_with_velocity(self.motors[0]["handle"], self.motors[0]["node_id"], left_dev)
-        self._move_with_velocity(self.motors[1]["handle"], self.motors[1]["node_id"], right_dev)
+        self._move_with_velocity(self.motors[1]["handle"], self.motors[1]["node_id'], right_dev)
 
     def on_quick_stop(self, msg: Bool):
         if msg.data:
@@ -331,7 +340,7 @@ class EPOSDriver(Node):
             raise RuntimeError("VCS_GetPositionIs not available for position-based odometry.")
         if self.epos.VCS_GetPositionIs(self.motors[0]["handle"], self.motors[0]["node_id"], ctypes.byref(left), ctypes.byref(self.error_code)) == 0:
             self.get_logger().error(f"Read left position failed (err=0x{self.error_code.value:08X})")
-        if self.epos.VCS_GetPositionIs(self.motors[1]["handle"], self.motors[1]["node_id"], ctypes.byref(right), ctypes.byref(self.error_code)) == 0:
+        if self.epos.VCS_GetPositionIs(self.motors[1]["handle'], self.motors[1]['node_id'], ctypes.byref(right), ctypes.byref(self.error_code)) == 0:
             self.get_logger().error(f"Read right position failed (err=0x{self.error_code.value:08X})")
         lv = -left.value  if self.motors[0]["invert"] else left.value
         rv = -right.value if self.motors[1]["invert"] else right.value
@@ -379,6 +388,11 @@ class EPOSDriver(Node):
             return
         self.last_time = now
 
+        # Defaults
+        v_l = v_r = 0.0         # wheel linear m/s
+        wL = wR = 0.0           # wheel rad/s
+        v = 0.0; w = 0.0        # robot v,w
+
         if self.odom_source == 'position':
             # Read absolute positions
             pL, pR = self._read_position_counts()
@@ -396,6 +410,13 @@ class EPOSDriver(Node):
             sL = dL_rad * self.wheel_radius
             sR = dR_rad * self.wheel_radius
 
+            # Per-wheel speeds
+            if dt > 0:
+                v_l = sL / dt
+                v_r = sR / dt
+                wL = dL_rad / dt
+                wR = dR_rad / dt
+
             # Robot incremental motion
             ds = (sR + sL) * 0.5
             dth = (sR - sL) / self.wheel_sep
@@ -406,8 +427,8 @@ class EPOSDriver(Node):
                 return
 
             # Apply calibration scales as **rates** over dt
-            v = (ds / dt) * 0.2*self.lin_scale
-            w = (dth / dt) * 0.17*self.ang_scale
+            v = (ds / dt) * self.lin_scale * 0.2   # (kept your factor; adjust/remove if undesired)
+            w = (dth / dt) * self.ang_scale * 0.17
 
         else:  # 'velocity'
             mL, mR = self._read_velocity_raw()
@@ -419,6 +440,7 @@ class EPOSDriver(Node):
             wR = self._motor_to_wheel_rad_s(mR)
             v_l = wL * self.wheel_radius
             v_r = wR * self.wheel_radius
+
             v = ((v_r + v_l) * 0.5) * self.lin_scale
             w = ((v_r - v_l) / self.wheel_sep) * self.ang_scale
 
@@ -444,6 +466,20 @@ class EPOSDriver(Node):
         odom.twist.twist.linear.x = v
         odom.twist.twist.angular.z = w
         self.odom_pub.publish(odom)
+
+        # --- NEW: publish (v,w) ---
+        vmsg = Twist()
+        vmsg.linear.x = v
+        vmsg.angular.z = w
+        self.vel_pub.publish(vmsg)
+
+        # --- NEW: publish wheel speeds ---
+        wh = Twist()
+        wh.linear.x  = v_l     # [m/s] left
+        wh.linear.y  = v_r     # [m/s] right
+        wh.angular.x = wL      # [rad/s] left
+        wh.angular.y = wR      # [rad/s] right
+        self.wh_pub.publish(wh)
 
         # TF
         t = TransformStamped()
